@@ -1,3 +1,13 @@
+/*
+ * Slang
+ * https://github.com/shader-slang/slang
+ * Copyright (c) 2017 Slang Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ *
+ * See LICENSE.txt in this directory for the full license text.
+ */
+
 #pragma once
 
 #include "slang.h"
