@@ -18,7 +18,7 @@ CMAKE_BUILD_TYPE := Release
 NINJA := ninja
 
 # Archive name
-ARCHIVE_NAME := SlangCompiler.xcframework.zip
+ARCHIVE_NAME := SlangBinary.xcframework.zip
 
 .PHONY: help all generators device simulator simulator-arm64 simulator-x86_64 simulator-universal build xcframework archive clean verify
 
