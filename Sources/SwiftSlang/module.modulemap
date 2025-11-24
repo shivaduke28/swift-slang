@@ -1,4 +1,6 @@
 module SwiftSlang {
+    header "SLError.h"
+    header "SLComponentTypeConvertible.h"
     header "SLGlobalSession.h"
     header "SLSessionDesc.h"
     header "SLSession.h"

@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import "SLComponentTypeConvertible.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -7,7 +8,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// A wrapper for slang::IModule
 /// Represents a compiled Slang module.
-@interface SLModule : NSObject
+@interface SLModule : NSObject <SLComponentTypeConvertible>
 
 /// Get the name of this module.
 @property (nonatomic, readonly) NSString *name;

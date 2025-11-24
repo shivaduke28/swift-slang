@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import "SLComponentTypeConvertible.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,7 +26,7 @@ typedef NS_ENUM(int32_t, SLShaderStage) {
 
 /// A wrapper for slang::IEntryPoint
 /// Represents an entry point in a Slang module.
-@interface SLEntryPoint : NSObject
+@interface SLEntryPoint : NSObject <SLComponentTypeConvertible>
 
 /// Get the name of this entry point.
 @property (nonatomic, readonly) NSString *name;

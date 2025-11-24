@@ -1,39 +1,35 @@
 #include <vector>
 #include <string>
+#include <utility>
 #include "../Slang/include/slang.h"
+#include "../Slang/include/slang-com-ptr.h"
 
 #import "SLGlobalSession.h"
 #import "SLSession.h"
 #import "SLSessionDesc.h"
+#import "SLError.h"
 
 // Error domain for Slang errors
 NSString *const SlangErrorDomain = @"com.slang.error";
 
-@interface SLGlobalSession ()
-@property (nonatomic, assign) slang::IGlobalSession *globalSession;
+@interface SLGlobalSession () {
+    Slang::ComPtr<slang::IGlobalSession> _globalSession;
+}
 @end
 
 // Forward declare internal interface
 @interface SLSession ()
-- (instancetype)initWithSession:(slang::ISession *)session;
+- (instancetype)initWithSessionPtr:(Slang::ComPtr<slang::ISession>)sessionPtr;
 @end
 
 @implementation SLGlobalSession
 
-- (void)dealloc {
-    if (_globalSession) {
-        _globalSession->release();
-        _globalSession = nullptr;
-    }
-}
-
 + (nullable instancetype)createWithError:(NSError *_Nullable *_Nullable)error {
     SLGlobalSession *instance = [[SLGlobalSession alloc] init];
 
-    slang::IGlobalSession *globalSession = nullptr;
-    SlangResult result = slang::createGlobalSession(&globalSession);
+    SlangResult result = slang::createGlobalSession(instance->_globalSession.writeRef());
 
-    if (SLANG_FAILED(result) || globalSession == nullptr) {
+    if (SLANG_FAILED(result) || !instance->_globalSession) {
         if (error) {
             *error = [NSError errorWithDomain:SlangErrorDomain
                                          code:result
@@ -42,7 +38,6 @@ NSString *const SlangErrorDomain = @"com.slang.error";
         return nil;
     }
 
-    instance.globalSession = globalSession;
     return instance;
 }
 
@@ -99,10 +94,11 @@ NSString *const SlangErrorDomain = @"com.slang.error";
     sessionDesc.preprocessorMacros = macros.data();
     sessionDesc.preprocessorMacroCount = static_cast<SlangInt>(macros.size());
 
-    slang::ISession *session = nullptr;
-    SlangResult result = _globalSession->createSession(sessionDesc, &session);
+    // Create session with ComPtr, then move to SLSession
+    Slang::ComPtr<slang::ISession> session;
+    SlangResult result = _globalSession->createSession(sessionDesc, session.writeRef());
 
-    if (SLANG_FAILED(result) || session == nullptr) {
+    if (SLANG_FAILED(result) || !session) {
         if (error) {
             *error = [NSError errorWithDomain:SlangErrorDomain
                                          code:result
@@ -111,7 +107,7 @@ NSString *const SlangErrorDomain = @"com.slang.error";
         return nil;
     }
 
-    return [[SLSession alloc] initWithSession:session];
+    return [[SLSession alloc] initWithSessionPtr:std::move(session)];
 }
 
 - (int32_t)findProfile:(NSString *)name {

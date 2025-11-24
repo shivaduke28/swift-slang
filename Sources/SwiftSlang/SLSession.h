@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import "SLComponentTypeConvertible.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,16 +19,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable SLModule *)loadModule:(NSString *)moduleName
                                error:(NSError *_Nullable *_Nullable)error;
 
-/// Load a module from source code.
+/// Load a module from source code string.
 /// @param moduleName The name to give the module.
 /// @param path The path to use for error messages.
-/// @param source The source code as NSData.
+/// @param source The source code as NSString.
 /// @param error If an error occurs, upon return contains an NSError object that describes the problem.
 /// @return A new SLModule instance, or nil if an error occurred.
-- (nullable SLModule *)loadModuleFromSourceWithName:(NSString *)moduleName
-                                                  path:(NSString *)path
-                                                source:(NSData *)source
-                                                 error:(NSError *_Nullable *_Nullable)error;
+- (nullable SLModule *)loadModuleFromSourceString:(NSString *)moduleName
+                                             path:(NSString *)path
+                                           source:(NSString *)source
+                                            error:(NSError *_Nullable *_Nullable)error;
 
 /// Create a composite component type from a module and entry points.
 /// This is used to link a module with its entry points for code generation.
@@ -38,6 +39,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable SLComponentType *)createCompositeComponentTypeWithModule:(SLModule *)module
                                                             entryPoints:(NSArray<SLEntryPoint *> *)entryPoints
                                                                   error:(NSError *_Nullable *_Nullable)error;
+
+/// Create a composite component type from an array of components.
+/// This mirrors the C++ API: session->createCompositeComponentType(IComponentType**, count, ...)
+/// Components can be modules (SLModule) or entry points (SLEntryPoint).
+/// @param components Array of component types (SLModule or SLEntryPoint).
+/// @param error If an error occurs, upon return contains an NSError object that describes the problem.
+/// @return A composite component type, or nil if an error occurred.
+- (nullable SLComponentType *)createCompositeComponentType:(NSArray<id<SLComponentTypeConvertible>> *)components
+                                                     error:(NSError *_Nullable *_Nullable)error;
 
 @end
 

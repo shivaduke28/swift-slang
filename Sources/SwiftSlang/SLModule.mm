@@ -1,34 +1,29 @@
+#include <utility>
 #include "../Slang/include/slang.h"
+#include "../Slang/include/slang-com-ptr.h"
 
 #import "SLModule.h"
 #import "SLEntryPoint.h"
 #import "SLComponentType.h"
+#import "SLError.h"
 
-extern NSString *const SlangErrorDomain;
-
-@interface SLModule ()
-@property (nonatomic, assign) slang::IModule *module;
+@interface SLModule () {
+    Slang::ComPtr<slang::IModule> _module;
+}
 @end
 
 @interface SLEntryPoint ()
-- (instancetype)initWithEntryPoint:(slang::IEntryPoint *)entryPoint;
+- (instancetype)initWithEntryPointPtr:(Slang::ComPtr<slang::IEntryPoint>)entryPointPtr;
 @end
 
 @implementation SLModule
 
-- (instancetype)initWithModule:(slang::IModule *)module {
+- (instancetype)initWithModulePtr:(Slang::ComPtr<slang::IModule>)modulePtr {
     self = [super init];
     if (self) {
-        _module = module;
+        _module = std::move(modulePtr);
     }
     return self;
-}
-
-- (void)dealloc {
-    if (_module) {
-        _module->release();
-        _module = nullptr;
-    }
 }
 
 - (NSString *)name {
@@ -65,19 +60,19 @@ extern NSString *const SlangErrorDomain;
         return nil;
     }
 
-    slang::IEntryPoint *entryPoint = nullptr;
-    SlangResult result = _module->findEntryPointByName([name UTF8String], &entryPoint);
+    Slang::ComPtr<slang::IEntryPoint> entryPoint;
+    _module->findEntryPointByName([name UTF8String], entryPoint.writeRef());
 
-    if (SLANG_FAILED(result) || entryPoint == nullptr) {
+    if (!entryPoint) {
         if (error) {
             *error = [NSError errorWithDomain:SlangErrorDomain
-                                         code:result
+                                         code:-1
                                      userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"Entry point '%@' not found", name]}];
         }
         return nil;
     }
 
-    return [[SLEntryPoint alloc] initWithEntryPoint:entryPoint];
+    return [[SLEntryPoint alloc] initWithEntryPointPtr:std::move(entryPoint)];
 }
 
 - (nullable SLEntryPoint *)entryPointAtIndex:(NSInteger)index
@@ -100,10 +95,10 @@ extern NSString *const SlangErrorDomain;
         return nil;
     }
 
-    slang::IEntryPoint *entryPoint = nullptr;
-    SlangResult result = _module->getDefinedEntryPoint(static_cast<SlangInt32>(index), &entryPoint);
+    Slang::ComPtr<slang::IEntryPoint> entryPoint;
+    SlangResult result = _module->getDefinedEntryPoint(static_cast<SlangInt32>(index), entryPoint.writeRef());
 
-    if (SLANG_FAILED(result) || entryPoint == nullptr) {
+    if (SLANG_FAILED(result) || !entryPoint) {
         if (error) {
             *error = [NSError errorWithDomain:SlangErrorDomain
                                          code:result
@@ -112,7 +107,7 @@ extern NSString *const SlangErrorDomain;
         return nil;
     }
 
-    return [[SLEntryPoint alloc] initWithEntryPoint:entryPoint];
+    return [[SLEntryPoint alloc] initWithEntryPointPtr:std::move(entryPoint)];
 }
 
 @end
@@ -121,7 +116,7 @@ extern NSString *const SlangErrorDomain;
 @implementation SLModule (ComponentType)
 
 - (slang::IComponentType *)asComponentType {
-    return static_cast<slang::IComponentType *>(_module);
+    return static_cast<slang::IComponentType *>(_module.get());
 }
 
 @end

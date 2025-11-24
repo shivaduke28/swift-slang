@@ -1,26 +1,22 @@
+#include <utility>
 #include "../Slang/include/slang.h"
+#include "../Slang/include/slang-com-ptr.h"
 
 #import "SLEntryPoint.h"
 
-@interface SLEntryPoint ()
-@property (nonatomic, assign) slang::IEntryPoint *entryPoint;
+@interface SLEntryPoint () {
+    Slang::ComPtr<slang::IEntryPoint> _entryPoint;
+}
 @end
 
 @implementation SLEntryPoint
 
-- (instancetype)initWithEntryPoint:(slang::IEntryPoint *)entryPoint {
+- (instancetype)initWithEntryPointPtr:(Slang::ComPtr<slang::IEntryPoint>)entryPointPtr {
     self = [super init];
     if (self) {
-        _entryPoint = entryPoint;
+        _entryPoint = std::move(entryPointPtr);
     }
     return self;
-}
-
-- (void)dealloc {
-    if (_entryPoint) {
-        _entryPoint->release();
-        _entryPoint = nullptr;
-    }
 }
 
 - (NSString *)name {
@@ -29,7 +25,7 @@
     }
 
     // Get the function reflection to access the name
-    slang::IComponentType *componentType = static_cast<slang::IComponentType *>(_entryPoint);
+    slang::IComponentType *componentType = static_cast<slang::IComponentType *>(_entryPoint.get());
     slang::ProgramLayout *layout = componentType->getLayout();
     if (layout && layout->getEntryPointCount() > 0) {
         slang::EntryPointReflection *reflection = layout->getEntryPointByIndex(0);
@@ -46,7 +42,7 @@
         return SLShaderStageNone;
     }
 
-    slang::IComponentType *componentType = static_cast<slang::IComponentType *>(_entryPoint);
+    slang::IComponentType *componentType = static_cast<slang::IComponentType *>(_entryPoint.get());
     slang::ProgramLayout *layout = componentType->getLayout();
     if (layout && layout->getEntryPointCount() > 0) {
         slang::EntryPointReflection *reflection = layout->getEntryPointByIndex(0);
@@ -58,7 +54,7 @@
 }
 
 - (slang::IComponentType *)asComponentType {
-    return static_cast<slang::IComponentType *>(_entryPoint);
+    return static_cast<slang::IComponentType *>(_entryPoint.get());
 }
 
 @end
