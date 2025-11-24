@@ -30,8 +30,9 @@ NS_ASSUME_NONNULL_BEGIN
                                            source:(NSString *)source
                                             error:(NSError *_Nullable *_Nullable)error;
 
-/// Create a composite component type from a module and entry points.
-/// This is used to link a module with its entry points for code generation.
+/// Convenience method to create a composite component type from a module and entry points.
+/// This is a Swift-friendly wrapper that internally calls createCompositeComponentType.
+/// For the original Slang API behavior, use createCompositeComponentType: instead.
 /// @param module The module to include.
 /// @param entryPoints Array of entry points to include.
 /// @param error If an error occurs, upon return contains an NSError object that describes the problem.

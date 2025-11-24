@@ -2,13 +2,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// Code generation target format
+/// Code generation target format.
+/// These values correspond to SlangCompileTarget in slang.h.
 typedef NS_ENUM(int32_t, SLCompileTargetType) {
     SLCompileTargetUnknown = 0,
     SLCompileTargetNone = 1,
     SLCompileTargetGLSL = 2,
-    SLCompileTargetGLSLVulkan = 3,
-    SLCompileTargetGLSLVulkanOneDesc = 4,
+    SLCompileTargetGLSLVulkan = 3,              ///< Deprecated: just use SLCompileTargetGLSL
+    SLCompileTargetGLSLVulkanOneDesc = 4,       ///< Deprecated
     SLCompileTargetHLSL = 5,
     SLCompileTargetSPIRV = 6,
     SLCompileTargetSPIRVAssembly = 7,
@@ -31,8 +32,11 @@ typedef NS_ENUM(int32_t, SLCompileTargetType) {
     SLCompileTargetMetal = 24,
     SLCompileTargetMetalLib = 25,
     SLCompileTargetMetalLibAssembly = 26,
-    SLCompileTargetLLVMIR = 27,
-    SLCompileTargetWGSL = 28,
+    SLCompileTargetHostSharedLibrary = 27,      ///< A shared library/Dll for host code
+    SLCompileTargetWGSL = 28,                   ///< WebGPU shading language
+    SLCompileTargetWGSLSPIRVAssembly = 29,      ///< SPIR-V assembly via WebGPU shading language
+    SLCompileTargetWGSLSPIRV = 30,              ///< SPIR-V via WebGPU shading language
+    SLCompileTargetHostVM = 31,                 ///< Bytecode for Slang VM
 };
 
 /// A wrapper for slang::TargetDesc

@@ -17,6 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, nullable) NSString *filePath;
 
 /// Find an entry point by name.
+/// @note This method only works for functions explicitly designated as entry points,
+///       e.g., using a `[shader("...")]` attribute. For functions without such attributes,
+///       the entry point will not be found.
 /// @param name The name of the entry point.
 /// @param error If an error occurs, upon return contains an NSError object that describes the problem.
 /// @return A SLEntryPoint instance, or nil if not found.

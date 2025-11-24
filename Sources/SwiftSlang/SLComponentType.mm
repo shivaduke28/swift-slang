@@ -1,8 +1,9 @@
 #include <utility>
-#import "SLComponentType.h"
-#import "SLError.h"
 #include "../Slang/include/slang.h"
 #include "../Slang/include/slang-com-ptr.h"
+
+#import "SLComponentType.h"
+#import "SLError.h"
 
 @interface SLComponentType () {
     Slang::ComPtr<slang::IComponentType> _componentType;
