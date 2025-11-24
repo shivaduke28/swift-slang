@@ -1,0 +1,12 @@
+module SwiftSlang {
+    header "SLGlobalSession.h"
+    header "SLSessionDesc.h"
+    header "SLSession.h"
+    header "SLModule.h"
+    header "SLEntryPoint.h"
+    header "SLComponentType.h"
+
+    export *
+
+    link "c++"
+}

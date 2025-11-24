@@ -11,6 +11,10 @@ let package = Package(
             name: "Slang",
             targets: ["Slang"]
         ),
+        .library(
+            name: "SwiftSlang",
+            targets: ["SwiftSlang"]
+        ),
     ],
     targets: [
         .binaryTarget(
@@ -26,6 +30,20 @@ let package = Package(
             publicHeadersPath: "include",
             cxxSettings: [
                 .define("SLANG_DYNAMIC", to: "0"),
+            ],
+            linkerSettings: [
+                .linkedLibrary("c++"),
+            ]
+        ),
+
+        .target(
+            name: "SwiftSlang",
+            dependencies: ["Slang", "SlangBinary"],
+            path: "Sources/SwiftSlang",
+            publicHeadersPath: ".",
+            cxxSettings: [
+                .define("SLANG_DYNAMIC", to: "0"),
+                .headerSearchPath("../Slang"),
             ],
             linkerSettings: [
                 .linkedLibrary("c++"),
