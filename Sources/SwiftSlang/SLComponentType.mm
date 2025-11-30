@@ -6,6 +6,67 @@
 #import "SLShaderParameter.h"
 #import "SLError.h"
 
+static void collectParameterForCategory(
+    slang::VariableLayoutReflection* varLayout,
+    slang::ParameterCategory category,
+    NSString* name,
+    NSMutableArray<SLShaderParameter*>* outParameters
+) {
+    switch (category) {
+        case slang::ParameterCategory::ShaderResource: {
+            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_SHADER_RESOURCE);
+            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
+                                                                      category:SLParameterCategoryShaderResource
+                                                                  bindingIndex:(NSUInteger)offset];
+            [outParameters addObject:param];
+            break;
+        }
+        case slang::ParameterCategory::SamplerState: {
+            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_SAMPLER_STATE);
+            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
+                                                                      category:SLParameterCategorySamplerState
+                                                                  bindingIndex:(NSUInteger)offset];
+            [outParameters addObject:param];
+            break;
+        }
+        case slang::ParameterCategory::ConstantBuffer: {
+            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_CONSTANT_BUFFER);
+            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
+                                                                      category:SLParameterCategoryConstantBuffer
+                                                                  bindingIndex:(NSUInteger)offset];
+            [outParameters addObject:param];
+            break;
+        }
+        case slang::ParameterCategory::Uniform: {
+            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_UNIFORM);
+            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
+                                                                      category:SLParameterCategoryUniform
+                                                                  bindingIndex:(NSUInteger)offset];
+            [outParameters addObject:param];
+            break;
+        }
+        case slang::ParameterCategory::Mixed: {
+            unsigned int catCount = varLayout->getCategoryCount();
+            for (unsigned int i = 0; i < catCount; i++) {
+                slang::ParameterCategory subCat = varLayout->getCategoryByIndex(i);
+                collectParameterForCategory(varLayout, subCat, name, outParameters);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+static void collectParametersFromVariableLayout(
+    slang::VariableLayoutReflection* varLayout,
+    NSString* name,
+    NSMutableArray<SLShaderParameter*>* outParameters
+) {
+    if (!varLayout) return;
+    collectParameterForCategory(varLayout, varLayout->getCategory(), name, outParameters);
+}
+
 @interface SLComponentType () {
     Slang::ComPtr<slang::IComponentType> _componentType;
 }
@@ -159,72 +220,11 @@
         slang::VariableLayoutReflection* param = layout->getParameterByIndex(i);
         if (!param) continue;
 
-        // Get parameter name
         const char* nameStr = param->getVariable()->getName();
         if (!nameStr) continue;
         NSString* name = [NSString stringWithUTF8String:nameStr];
 
-        // Get parameter category
-        slang::ParameterCategory slangCategory = param->getCategory();
-        SLParameterCategory category = SLParameterCategoryNone;
-        NSUInteger bindingIndex = 0;
-
-        // Convert Slang category to SLParameterCategory
-        switch (slangCategory) {
-            case slang::ParameterCategory::ShaderResource:
-                category = SLParameterCategoryShaderResource;
-                bindingIndex = param->getOffset(SLANG_PARAMETER_CATEGORY_SHADER_RESOURCE);
-                break;
-            case slang::ParameterCategory::SamplerState:
-                category = SLParameterCategorySamplerState;
-                bindingIndex = param->getOffset(SLANG_PARAMETER_CATEGORY_SAMPLER_STATE);
-                break;
-            case slang::ParameterCategory::ConstantBuffer:
-                category = SLParameterCategoryConstantBuffer;
-                bindingIndex = param->getOffset(SLANG_PARAMETER_CATEGORY_CONSTANT_BUFFER);
-                break;
-            case slang::ParameterCategory::Uniform:
-                category = SLParameterCategoryUniform;
-                bindingIndex = param->getOffset(SLANG_PARAMETER_CATEGORY_UNIFORM);
-                break;
-            case slang::ParameterCategory::Mixed:
-                // Mixed category - iterate sub-categories and get offsets
-                {
-                    unsigned int catCount = param->getCategoryCount();
-                    for (unsigned int j = 0; j < catCount; j++) {
-                        slang::ParameterCategory subCat = param->getCategoryByIndex(j);
-
-                        if (subCat == slang::ParameterCategory::ShaderResource) {
-                            size_t texOffset = param->getOffset(SLANG_PARAMETER_CATEGORY_SHADER_RESOURCE);
-                            SLShaderParameter* texParam = [[SLShaderParameter alloc] initWithName:name
-                                                                                         category:SLParameterCategoryShaderResource
-                                                                                     bindingIndex:(NSUInteger)texOffset];
-                            [parameters addObject:texParam];
-                        } else if (subCat == slang::ParameterCategory::SamplerState) {
-                            size_t samplerOffset = param->getOffset(SLANG_PARAMETER_CATEGORY_SAMPLER_STATE);
-                            SLShaderParameter* samplerParam = [[SLShaderParameter alloc] initWithName:name
-                                                                                             category:SLParameterCategorySamplerState
-                                                                                         bindingIndex:(NSUInteger)samplerOffset];
-                            [parameters addObject:samplerParam];
-                        } else if (subCat == slang::ParameterCategory::ConstantBuffer) {
-                            size_t bufOffset = param->getOffset(SLANG_PARAMETER_CATEGORY_CONSTANT_BUFFER);
-                            SLShaderParameter* bufParam = [[SLShaderParameter alloc] initWithName:name
-                                                                                         category:SLParameterCategoryConstantBuffer
-                                                                                     bindingIndex:(NSUInteger)bufOffset];
-                            [parameters addObject:bufParam];
-                        }
-                    }
-                }
-                continue;
-            default:
-                // Skip other categories
-                continue;
-        }
-
-        SLShaderParameter* shaderParam = [[SLShaderParameter alloc] initWithName:name
-                                                                        category:category
-                                                                    bindingIndex:bindingIndex];
-        [parameters addObject:shaderParam];
+        collectParametersFromVariableLayout(param, name, parameters);
     }
 
     return [parameters copy];
