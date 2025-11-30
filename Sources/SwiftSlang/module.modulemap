@@ -6,6 +6,7 @@ module SwiftSlang {
     header "SLSession.h"
     header "SLModule.h"
     header "SLEntryPoint.h"
+    header "SLShaderParameter.h"
     header "SLComponentType.h"
 
     export *
