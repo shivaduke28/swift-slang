@@ -4,12 +4,64 @@
 
 #import "SLComponentType.h"
 #import "SLShaderParameter.h"
+#import "SLUserAttribute.h"
 #import "SLError.h"
+
+/// Collect user-defined attributes from a variable reflection.
+static NSArray<SLUserAttribute*>* collectUserAttributes(slang::VariableReflection* variable) {
+    if (!variable) return @[];
+
+    unsigned int attrCount = variable->getUserAttributeCount();
+    if (attrCount == 0) return @[];
+
+    NSMutableArray<SLUserAttribute*>* attributes = [NSMutableArray arrayWithCapacity:attrCount];
+
+    for (unsigned int i = 0; i < attrCount; i++) {
+        slang::UserAttribute* attr = variable->getUserAttributeByIndex(i);
+        if (!attr) continue;
+
+        const char* attrNameStr = attr->getName();
+        if (!attrNameStr) continue;
+        NSString* attrName = [NSString stringWithUTF8String:attrNameStr];
+
+        uint32_t argCount = attr->getArgumentCount();
+        NSMutableArray<NSNumber*>* floatArgs = [NSMutableArray arrayWithCapacity:argCount];
+        NSMutableArray<NSString*>* stringArgs = [NSMutableArray arrayWithCapacity:argCount];
+
+        for (uint32_t j = 0; j < argCount; j++) {
+            // Try to get float value
+            float floatValue = 0.0f;
+            if (SLANG_SUCCEEDED(attr->getArgumentValueFloat(j, &floatValue))) {
+                [floatArgs addObject:@(floatValue)];
+                [stringArgs addObject:@""];
+            } else {
+                // Try to get string value
+                size_t strLen = 0;
+                const char* strValue = attr->getArgumentValueString(j, &strLen);
+                if (strValue && strLen > 0) {
+                    [floatArgs addObject:@(0.0f)];
+                    [stringArgs addObject:[NSString stringWithUTF8String:strValue]];
+                } else {
+                    [floatArgs addObject:@(0.0f)];
+                    [stringArgs addObject:@""];
+                }
+            }
+        }
+
+        SLUserAttribute* userAttr = [[SLUserAttribute alloc] initWithName:attrName
+                                                            floatArguments:floatArgs
+                                                           stringArguments:stringArgs];
+        [attributes addObject:userAttr];
+    }
+
+    return [attributes copy];
+}
 
 static void collectParameterForCategory(
     slang::VariableLayoutReflection* varLayout,
     slang::ParameterCategory category,
     NSString* name,
+    NSArray<SLUserAttribute*>* userAttributes,
     NSMutableArray<SLShaderParameter*>* outParameters
 ) {
     switch (category) {
@@ -17,7 +69,8 @@ static void collectParameterForCategory(
             size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_SHADER_RESOURCE);
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategoryShaderResource
-                                                                  bindingIndex:(NSUInteger)offset];
+                                                                  bindingIndex:(NSUInteger)offset
+                                                                userAttributes:userAttributes];
             [outParameters addObject:param];
             break;
         }
@@ -25,7 +78,8 @@ static void collectParameterForCategory(
             size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_SAMPLER_STATE);
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategorySamplerState
-                                                                  bindingIndex:(NSUInteger)offset];
+                                                                  bindingIndex:(NSUInteger)offset
+                                                                userAttributes:userAttributes];
             [outParameters addObject:param];
             break;
         }
@@ -33,7 +87,8 @@ static void collectParameterForCategory(
             size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_CONSTANT_BUFFER);
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategoryConstantBuffer
-                                                                  bindingIndex:(NSUInteger)offset];
+                                                                  bindingIndex:(NSUInteger)offset
+                                                                userAttributes:userAttributes];
             [outParameters addObject:param];
             break;
         }
@@ -41,7 +96,8 @@ static void collectParameterForCategory(
             size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_UNIFORM);
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategoryUniform
-                                                                  bindingIndex:(NSUInteger)offset];
+                                                                  bindingIndex:(NSUInteger)offset
+                                                                userAttributes:userAttributes];
             [outParameters addObject:param];
             break;
         }
@@ -49,7 +105,7 @@ static void collectParameterForCategory(
             unsigned int catCount = varLayout->getCategoryCount();
             for (unsigned int i = 0; i < catCount; i++) {
                 slang::ParameterCategory subCat = varLayout->getCategoryByIndex(i);
-                collectParameterForCategory(varLayout, subCat, name, outParameters);
+                collectParameterForCategory(varLayout, subCat, name, userAttributes, outParameters);
             }
             break;
         }
@@ -64,7 +120,11 @@ static void collectParametersFromVariableLayout(
     NSMutableArray<SLShaderParameter*>* outParameters
 ) {
     if (!varLayout) return;
-    collectParameterForCategory(varLayout, varLayout->getCategory(), name, outParameters);
+
+    // Collect user attributes from the variable
+    NSArray<SLUserAttribute*>* userAttributes = collectUserAttributes(varLayout->getVariable());
+
+    collectParameterForCategory(varLayout, varLayout->getCategory(), name, userAttributes, outParameters);
 }
 
 @interface SLComponentType () {
