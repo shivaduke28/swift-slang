@@ -4,6 +4,7 @@
 
 #import "SLComponentType.h"
 #import "SLShaderParameter.h"
+#import "SLTypeLayout.h"
 #import "SLUserAttribute.h"
 #import "SLError.h"
 
@@ -67,6 +68,10 @@ static NSArray<SLUserAttribute*>* collectUserAttributes(slang::VariableReflectio
     return [attributes copy];
 }
 
+@interface SLTypeLayout ()
+- (instancetype)initWithTypeLayoutPtr:(slang::TypeLayoutReflection*)typeLayoutPtr;
+@end
+
 static void collectParameterForCategory(
     slang::VariableLayoutReflection* varLayout,
     slang::ParameterCategory category,
@@ -74,13 +79,18 @@ static void collectParameterForCategory(
     NSArray<SLUserAttribute*>* userAttributes,
     NSMutableArray<SLShaderParameter*>* outParameters
 ) {
+    slang::TypeLayoutReflection* rawTypeLayout = varLayout->getTypeLayout();
+    SLTypeLayout* typeLayout = rawTypeLayout
+        ? [[SLTypeLayout alloc] initWithTypeLayoutPtr:rawTypeLayout]
+        : nil;
     switch (category) {
         case slang::ParameterCategory::ShaderResource: {
             size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_SHADER_RESOURCE);
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategoryShaderResource
                                                                   bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes];
+                                                                userAttributes:userAttributes
+                                                                    typeLayout:typeLayout];
             [outParameters addObject:param];
             break;
         }
@@ -89,7 +99,8 @@ static void collectParameterForCategory(
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategorySamplerState
                                                                   bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes];
+                                                                userAttributes:userAttributes
+                                                                    typeLayout:typeLayout];
             [outParameters addObject:param];
             break;
         }
@@ -98,7 +109,8 @@ static void collectParameterForCategory(
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategoryConstantBuffer
                                                                   bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes];
+                                                                userAttributes:userAttributes
+                                                                    typeLayout:typeLayout];
             [outParameters addObject:param];
             break;
         }
@@ -107,7 +119,8 @@ static void collectParameterForCategory(
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategoryUniform
                                                                   bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes];
+                                                                userAttributes:userAttributes
+                                                                    typeLayout:typeLayout];
             [outParameters addObject:param];
             break;
         }
@@ -116,7 +129,8 @@ static void collectParameterForCategory(
             SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
                                                                       category:SLParameterCategoryUnorderedAccess
                                                                   bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes];
+                                                                userAttributes:userAttributes
+                                                                    typeLayout:typeLayout];
             [outParameters addObject:param];
             break;
         }

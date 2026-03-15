@@ -3,6 +3,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class SLUserAttribute;
+@class SLTypeLayout;
 
 /// Parameter category for shader resources.
 /// These values correspond to SlangParameterCategory in slang.h.
@@ -30,10 +31,15 @@ typedef NS_ENUM(NSInteger, SLParameterCategory) {
 /// User-defined attributes on this parameter (e.g., [range(0.0, 1.0, "desc")]).
 @property (nonatomic, readonly) NSArray<SLUserAttribute *> *userAttributes;
 
+/// Type layout information for this parameter.
+/// Returns nil if the type layout is not available.
+@property (nonatomic, readonly, nullable) SLTypeLayout *typeLayout;
+
 - (instancetype)initWithName:(NSString *)name
                     category:(SLParameterCategory)category
                 bindingIndex:(NSUInteger)bindingIndex
-              userAttributes:(NSArray<SLUserAttribute *> *)userAttributes;
+              userAttributes:(NSArray<SLUserAttribute *> *)userAttributes
+                  typeLayout:(nullable SLTypeLayout *)typeLayout;
 
 @end
 
