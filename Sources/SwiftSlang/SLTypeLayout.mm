@@ -3,6 +3,7 @@
 #import "SLTypeLayout.h"
 #import "SLTypeReflection.h"
 #import "SLVariableLayoutReflection.h"
+#import "SLParameterCategoryInternal.h"
 
 @interface SLTypeReflection ()
 - (instancetype)initWithTypeReflectionPtr:(slang::TypeReflection*)ptr;
@@ -11,19 +12,6 @@
 @interface SLVariableLayoutReflection ()
 - (instancetype)initWithVariableLayoutReflectionPtr:(slang::VariableLayoutReflection*)ptr;
 @end
-
-/// Maps SLParameterCategory to SlangParameterCategory.
-static SlangParameterCategory toSlangParameterCategory(SLParameterCategory category) {
-    switch (category) {
-        case SLParameterCategoryNone: return SLANG_PARAMETER_CATEGORY_NONE;
-        case SLParameterCategoryConstantBuffer: return SLANG_PARAMETER_CATEGORY_CONSTANT_BUFFER;
-        case SLParameterCategoryShaderResource: return SLANG_PARAMETER_CATEGORY_SHADER_RESOURCE;
-        case SLParameterCategorySamplerState: return SLANG_PARAMETER_CATEGORY_SAMPLER_STATE;
-        case SLParameterCategoryUniform: return SLANG_PARAMETER_CATEGORY_UNIFORM;
-        case SLParameterCategoryUnorderedAccess: return SLANG_PARAMETER_CATEGORY_UNORDERED_ACCESS;
-        default: return SLANG_PARAMETER_CATEGORY_NONE;
-    }
-}
 
 @interface SLTypeLayout () {
     slang::TypeLayoutReflection* _typeLayout;
