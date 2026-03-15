@@ -1,18 +1,21 @@
 #import "SLShaderParameter.h"
 #import "SLUserAttribute.h"
+#import "SLTypeLayout.h"
 
 @implementation SLShaderParameter
 
 - (instancetype)initWithName:(NSString *)name
                     category:(SLParameterCategory)category
                 bindingIndex:(NSUInteger)bindingIndex
-              userAttributes:(NSArray<SLUserAttribute *> *)userAttributes {
+              userAttributes:(NSArray<SLUserAttribute *> *)userAttributes
+                  typeLayout:(SLTypeLayout *)typeLayout {
     self = [super init];
     if (self) {
         _name = [name copy];
         _category = category;
         _bindingIndex = bindingIndex;
         _userAttributes = [userAttributes copy];
+        _typeLayout = typeLayout;
     }
     return self;
 }
