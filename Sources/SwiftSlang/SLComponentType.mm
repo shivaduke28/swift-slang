@@ -5,68 +5,8 @@
 #import "SLComponentType.h"
 #import "SLShaderParameter.h"
 #import "SLTypeLayout.h"
-#import "SLUserAttribute.h"
+#import "SLUserAttributeInternal.h"
 #import "SLError.h"
-
-/// Collect user-defined attributes from a variable reflection.
-static NSArray<SLUserAttribute*>* collectUserAttributes(slang::VariableReflection* variable) {
-    if (!variable) return @[];
-
-    unsigned int attrCount = variable->getUserAttributeCount();
-    if (attrCount == 0) return @[];
-
-    NSMutableArray<SLUserAttribute*>* attributes = [NSMutableArray arrayWithCapacity:attrCount];
-
-    for (unsigned int i = 0; i < attrCount; i++) {
-        slang::UserAttribute* attr = variable->getUserAttributeByIndex(i);
-        if (!attr) continue;
-
-        const char* attrNameStr = attr->getName();
-        if (!attrNameStr) continue;
-        NSString* attrName = [NSString stringWithUTF8String:attrNameStr];
-
-        uint32_t argCount = attr->getArgumentCount();
-        NSMutableArray<NSNumber*>* floatArgs = [NSMutableArray arrayWithCapacity:argCount];
-        NSMutableArray<NSNumber*>* intArgs = [NSMutableArray arrayWithCapacity:argCount];
-        NSMutableArray<NSString*>* stringArgs = [NSMutableArray arrayWithCapacity:argCount];
-
-        for (uint32_t j = 0; j < argCount; j++) {
-            // Try to get float value
-            float floatValue = 0.0f;
-            int intValue = 0;
-            if (SLANG_SUCCEEDED(attr->getArgumentValueFloat(j, &floatValue))) {
-                [floatArgs addObject:@(floatValue)];
-                [intArgs addObject:@(0)];
-                [stringArgs addObject:@""];
-            } else if (SLANG_SUCCEEDED(attr->getArgumentValueInt(j, &intValue))) {
-                [floatArgs addObject:@(0.0f)];
-                [intArgs addObject:@(intValue)];
-                [stringArgs addObject:@""];
-            } else {
-                // Try to get string value
-                size_t strLen = 0;
-                const char* strValue = attr->getArgumentValueString(j, &strLen);
-                if (strValue && strLen > 0) {
-                    [floatArgs addObject:@(0.0f)];
-                    [intArgs addObject:@(0)];
-                    [stringArgs addObject:[NSString stringWithUTF8String:strValue]];
-                } else {
-                    [floatArgs addObject:@(0.0f)];
-                    [intArgs addObject:@(0)];
-                    [stringArgs addObject:@""];
-                }
-            }
-        }
-
-        SLUserAttribute* userAttr = [[SLUserAttribute alloc] initWithName:attrName
-                                                            floatArguments:floatArgs
-                                                              intArguments:intArgs
-                                                           stringArguments:stringArgs];
-        [attributes addObject:userAttr];
-    }
-
-    return [attributes copy];
-}
 
 @interface SLTypeLayout ()
 - (instancetype)initWithTypeLayoutPtr:(slang::TypeLayoutReflection*)typeLayoutPtr;
