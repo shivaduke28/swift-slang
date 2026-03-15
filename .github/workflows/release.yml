@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version without v prefix (e.g. 0.4.0)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: Version must be in X.Y.Z format"
+            exit 1
+          fi
+
+      - name: Remove submodule references
+        run: |
+          if [ -f .gitmodules ]; then
+            git rm .gitmodules
+          fi
+          if [ -d slang ]; then
+            git rm -rf --cached slang 2>/dev/null || true
+            rm -rf slang
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release commit and tag
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No submodule to remove, tagging current state"
+          else
+            git commit -m "Release v${{ inputs.version }}"
+          fi
+          git tag "v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --title "v${{ inputs.version }}" \
+            --generate-notes
