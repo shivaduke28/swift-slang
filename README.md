@@ -4,7 +4,7 @@ A wrapper of [Slang](https://github.com/shader-slang/slang) for Swift.
 
 ## Slang Version
 
-This package uses **Slang v2025.22**.
+This package uses **Slang v2026.4.2**.
 
 ## Note
 
