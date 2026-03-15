@@ -111,6 +111,15 @@ static void collectParameterForCategory(
             [outParameters addObject:param];
             break;
         }
+        case slang::ParameterCategory::UnorderedAccess: {
+            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_UNORDERED_ACCESS);
+            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
+                                                                      category:SLParameterCategoryUnorderedAccess
+                                                                  bindingIndex:(NSUInteger)offset
+                                                                userAttributes:userAttributes];
+            [outParameters addObject:param];
+            break;
+        }
         case slang::ParameterCategory::Mixed: {
             unsigned int catCount = varLayout->getCategoryCount();
             for (unsigned int i = 0; i < catCount; i++) {

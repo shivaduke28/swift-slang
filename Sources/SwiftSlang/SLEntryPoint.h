@@ -4,6 +4,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class SLBlob;
+@class SLUserAttribute;
 
 /// Stage type for shader entry points.
 /// These values correspond to SlangStage in slang.h.
@@ -35,6 +36,13 @@ typedef NS_ENUM(int32_t, SLShaderStage) {
 
 /// Get the stage of this entry point.
 @property (nonatomic, readonly) SLShaderStage stage;
+
+/// User-defined attributes on this entry point (e.g., [dispatch(1, 1, 1)]).
+@property (nonatomic, readonly) NSArray<SLUserAttribute *> *userAttributes;
+
+/// Compute thread group size from [numthreads(X, Y, Z)].
+/// Returns {0, 0, 0} for non-compute entry points.
+@property (nonatomic, readonly) NSArray<NSNumber *> *computeThreadGroupSize;
 
 @end
 
