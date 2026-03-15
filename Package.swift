@@ -49,6 +49,10 @@ let package = Package(
                 .linkedLibrary("c++"),
             ]
         ),
+        .testTarget(
+            name: "SwiftSlangTests",
+            dependencies: ["SwiftSlang"]
+        ),
     ],
     cxxLanguageStandard: .cxx17
 )
