@@ -12,6 +12,7 @@ typedef NS_ENUM(NSInteger, SLParameterCategory) {
     SLParameterCategoryShaderResource,
     SLParameterCategorySamplerState,
     SLParameterCategoryUniform,
+    SLParameterCategoryUnorderedAccess,
 };
 
 /// Represents a shader parameter extracted from Slang reflection.
