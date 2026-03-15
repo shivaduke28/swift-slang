@@ -41,6 +41,20 @@ cp slang/include/slang-com-ptr.h Sources/Slang/include/
 cp slang/include/slang-com-helper.h Sources/Slang/include/
 ```
 
+**重要**: コピー後、各ヘッダーファイルの先頭にライセンスヘッダーが残っているか確認する。元のファイルにある以下のブロックが消えていたら復元すること:
+
+```c
+/*
+ * Slang
+ * https://github.com/shader-slang/slang
+ * Copyright (c) 2017 Slang Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ *
+ * See LICENSE.txt in this directory for the full license text.
+ */
+```
+
 ヘッダーに差分があるか `git diff` で確認し、API の破壊的変更がないかユーザーに報告する。
 
 ### 3. XCFramework ビルド
