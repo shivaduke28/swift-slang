@@ -321,6 +321,56 @@ final class SwiftSlangTests: XCTestCase {
 
     // MARK: - Resource Types
 
+    func testResourceResultType() throws {
+        let globalSession = try SLGlobalSession.create()
+        let profile = globalSession.findProfile("sm_5_0")
+        let targetDesc = SLTargetDesc(format: .metal, profile: profile)
+        let sessionDesc = SLSessionDesc()
+        sessionDesc.targets = [targetDesc]
+        let session = try globalSession.createSession(with: sessionDesc)
+
+        let source = """
+        RWTexture2D<float4> rwTex4;
+        RWTexture2D<float> rwTex1;
+        RWTexture2D<half4> rwTexH4;
+        [shader("compute")]
+        [numthreads(1,1,1)]
+        void csMain(uint3 tid : SV_DispatchThreadID) {
+            rwTex4[tid.xy] = float4(0,0,0,0);
+            rwTex1[tid.xy] = 0;
+            rwTexH4[tid.xy] = half4(0,0,0,0);
+        }
+        """
+        let module = try session.loadModule(fromSourceString: "Test", path: "<inline>", source: source)
+        let entryPoint = try module.entryPoint(at: 0)
+        let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
+        let linked = try composite.link()
+        let params = try linked.getShaderParameters(0)
+
+        // RWTexture2D<float4>
+        let tex4Param = try XCTUnwrap(params.first { $0.name == "rwTex4" })
+        let tex4TypeLayout = try XCTUnwrap(tex4Param.typeLayout)
+        let tex4ResultType = try XCTUnwrap(tex4TypeLayout.getResourceResultType())
+        XCTAssertEqual(tex4ResultType.getKind(), .vector)
+        XCTAssertEqual(tex4ResultType.getScalarType(), .float32)
+        XCTAssertEqual(tex4ResultType.getElementCount(), 4)
+
+        // RWTexture2D<float>
+        let tex1Param = try XCTUnwrap(params.first { $0.name == "rwTex1" })
+        let tex1TypeLayout = try XCTUnwrap(tex1Param.typeLayout)
+        let tex1ResultType = try XCTUnwrap(tex1TypeLayout.getResourceResultType())
+        XCTAssertEqual(tex1ResultType.getKind(), .scalar)
+        XCTAssertEqual(tex1ResultType.getScalarType(), .float32)
+
+        // RWTexture2D<half4>
+        let texH4Param = try XCTUnwrap(params.first { $0.name == "rwTexH4" })
+        let texH4TypeLayout = try XCTUnwrap(texH4Param.typeLayout)
+        let texH4ResultType = try XCTUnwrap(texH4TypeLayout.getResourceResultType())
+        XCTAssertEqual(texH4ResultType.getKind(), .vector)
+        XCTAssertEqual(texH4ResultType.getScalarType(), .float16)
+        XCTAssertEqual(texH4ResultType.getElementCount(), 4)
+    }
+
     func testTextureAndSamplerParameters() throws {
         let globalSession = try SLGlobalSession.create()
         let profile = globalSession.findProfile("sm_5_0")

@@ -38,6 +38,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// Corresponds to TypeLayoutReflection::getFieldByIndex()
 - (nullable SLVariableLayoutReflection *)getFieldByIndex:(unsigned int)index;
 
+/// Corresponds to TypeLayoutReflection::getResourceResultType()
+/// Returns the element type for resource types (e.g., float4 in RWTexture2D<float4>).
+- (nullable SLTypeReflection *)getResourceResultType;
+
 @end
 
 NS_ASSUME_NONNULL_END
