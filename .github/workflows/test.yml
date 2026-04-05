@@ -35,5 +35,5 @@ jobs:
         run: |
           xcodebuild test \
             -scheme SwiftSlang-Package \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination 'platform=macOS' \
             -skipPackagePluginValidation
