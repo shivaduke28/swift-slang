@@ -356,6 +356,110 @@ final class SwiftSlangTests: XCTestCase {
         XCTAssertEqual(texType.getResourceAccess(), .read)
     }
 
+    // MARK: - Preprocessor Macros
+
+    func testPreprocessorMacroAffectsCompilation() throws {
+        let globalSession = try SLGlobalSession.create()
+        let profile = globalSession.findProfile("sm_5_0")
+        let targetDesc = SLTargetDesc(format: .metal, profile: profile)
+
+        let source = """
+        uniform float intensity;
+        [shader("fragment")]
+        float4 fragMain() : SV_Target {
+        #ifdef USE_RED
+            return float4(intensity, 0, 0, 1);
+        #else
+            return float4(0, 0, intensity, 1);
+        #endif
+        }
+        """
+
+        // With USE_RED defined
+        let sessionDescWithMacro = SLSessionDesc()
+        sessionDescWithMacro.targets = [targetDesc]
+        sessionDescWithMacro.preprocessorMacros = ["USE_RED": "1"]
+        let sessionWith = try globalSession.createSession(with: sessionDescWithMacro)
+        let moduleWith = try sessionWith.loadModule(fromSourceString: "Test", path: "<inline>", source: source)
+        let epWith = try moduleWith.entryPoint(at: 0)
+        let compositeWith = try sessionWith.createCompositeComponentType(with: moduleWith, entryPoints: [epWith])
+        let linkedWith = try compositeWith.link()
+        let codeWith = try linkedWith.getTargetCode(0)
+
+        // Without USE_RED defined
+        let sessionDescWithout = SLSessionDesc()
+        sessionDescWithout.targets = [targetDesc]
+        let sessionWithout = try globalSession.createSession(with: sessionDescWithout)
+        let moduleWithout = try sessionWithout.loadModule(fromSourceString: "Test", path: "<inline>", source: source)
+        let epWithout = try moduleWithout.entryPoint(at: 0)
+        let compositeWithout = try sessionWithout.createCompositeComponentType(with: moduleWithout, entryPoints: [epWithout])
+        let linkedWithout = try compositeWithout.link()
+        let codeWithout = try linkedWithout.getTargetCode(0)
+
+        // Both should compile successfully but produce different Metal code
+        XCTAssertGreaterThan(codeWith.count, 0)
+        XCTAssertGreaterThan(codeWithout.count, 0)
+        XCTAssertNotEqual(codeWith, codeWithout)
+    }
+
+    func testMultiplePreprocessorMacros() throws {
+        let globalSession = try SLGlobalSession.create()
+        let profile = globalSession.findProfile("sm_5_0")
+        let targetDesc = SLTargetDesc(format: .metal, profile: profile)
+        let sessionDesc = SLSessionDesc()
+        sessionDesc.targets = [targetDesc]
+        sessionDesc.preprocessorMacros = [
+            "RESOLUTION_X": "1920",
+            "RESOLUTION_Y": "1080",
+            "SCALE": "2",
+        ]
+        let session = try globalSession.createSession(with: sessionDesc)
+
+        let source = """
+        [shader("fragment")]
+        float4 fragMain() : SV_Target {
+            float x = RESOLUTION_X;
+            float y = RESOLUTION_Y;
+            float s = SCALE;
+            return float4(x, y, s, 1);
+        }
+        """
+        let module = try session.loadModule(fromSourceString: "Test", path: "<inline>", source: source)
+        let entryPoint = try module.entryPoint(at: 0)
+        let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
+        let linked = try composite.link()
+        let metalCode = try linked.getTargetCode(0)
+        XCTAssertGreaterThan(metalCode.count, 0)
+    }
+
+    func testPreprocessorMacroWithValue() throws {
+        let globalSession = try SLGlobalSession.create()
+        let profile = globalSession.findProfile("sm_5_0")
+        let targetDesc = SLTargetDesc(format: .metal, profile: profile)
+        let sessionDesc = SLSessionDesc()
+        sessionDesc.targets = [targetDesc]
+        sessionDesc.preprocessorMacros = ["CHANNEL_COUNT": "3"]
+        let session = try globalSession.createSession(with: sessionDesc)
+
+        let source = """
+        uniform float values[CHANNEL_COUNT];
+        [shader("fragment")]
+        float4 fragMain() : SV_Target { return float4(values[0], values[1], values[2], 1); }
+        """
+        let module = try session.loadModule(fromSourceString: "Test", path: "<inline>", source: source)
+        let entryPoint = try module.entryPoint(at: 0)
+        let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
+        let linked = try composite.link()
+        let params = try linked.getShaderParameters(0)
+
+        let valuesParam = params.first { $0.name == "values" }
+        XCTAssertNotNil(valuesParam)
+        let typeLayout = try XCTUnwrap(valuesParam?.typeLayout)
+        let type = try XCTUnwrap(typeLayout.getType())
+        XCTAssertEqual(type.getKind(), .array)
+        XCTAssertEqual(type.getElementCount(), 3)
+    }
+
     // MARK: - Entry Point
 
     func testComputeEntryPoint() throws {
