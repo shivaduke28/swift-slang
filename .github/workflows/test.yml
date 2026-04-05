@@ -21,6 +21,9 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      - name: Install iOS Simulator runtime
+        run: xcodebuild -downloadPlatform iOS
+
       - name: Cache Swift packages
         uses: actions/cache@v4
         with:
@@ -35,5 +38,5 @@ jobs:
         run: |
           xcodebuild test \
             -scheme SwiftSlang-Package \
-            -destination 'platform=macOS' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -skipPackagePluginValidation
