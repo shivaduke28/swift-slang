@@ -65,6 +65,9 @@ NSString *const SlangErrorDomain = @"com.slang.error";
     // Build search paths
     std::vector<const char *> searchPaths;
     std::vector<std::string> searchPathStrings; // Keep strings alive
+    NSUInteger searchPathCount = desc.searchPaths.count;
+    searchPathStrings.reserve(searchPathCount);
+    searchPaths.reserve(searchPathCount);
     for (NSString *path in desc.searchPaths) {
         searchPathStrings.push_back([path UTF8String]);
         searchPaths.push_back(searchPathStrings.back().c_str());
@@ -74,6 +77,10 @@ NSString *const SlangErrorDomain = @"com.slang.error";
     std::vector<slang::PreprocessorMacroDesc> macros;
     std::vector<std::string> macroNames;
     std::vector<std::string> macroValues;
+    NSUInteger macroCount = desc.preprocessorMacros.count;
+    macroNames.reserve(macroCount);
+    macroValues.reserve(macroCount);
+    macros.reserve(macroCount);
     for (NSString *name in desc.preprocessorMacros) {
         NSString *value = desc.preprocessorMacros[name];
         macroNames.push_back([name UTF8String]);
