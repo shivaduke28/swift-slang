@@ -21,7 +21,15 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      - name: Cache iOS Simulator runtime
+        id: cache-ios-runtime
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/CoreSimulator/Profiles/Runtimes
+          key: ${{ runner.os }}-ios-simulator-xcode-16.2
+
       - name: Install iOS Simulator runtime
+        if: steps.cache-ios-runtime.outputs.cache-hit != 'true'
         run: xcodebuild -downloadPlatform iOS
 
       - name: Cache Swift packages
