@@ -79,4 +79,11 @@
     return [[SLVariableLayoutReflection alloc] initWithVariableLayoutReflectionPtr:field];
 }
 
+- (nullable SLTypeReflection *)getResourceResultType {
+    if (!_typeLayout) return nil;
+    slang::TypeReflection* resultType = _typeLayout->getResourceResultType();
+    if (!resultType) return nil;
+    return [[SLTypeReflection alloc] initWithTypeReflectionPtr:resultType];
+}
+
 @end
