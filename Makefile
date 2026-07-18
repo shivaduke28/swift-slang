@@ -84,18 +84,21 @@ device: generators
 		-DSLANG_ENABLE_SLANGD=OFF \
 		-DSLANG_ENABLE_SLANGC=OFF \
 		-DSLANG_ENABLE_SLANGRT=OFF \
-		-DSLANG_ENABLE_SLANGI=OFF && \
+		-DSLANG_ENABLE_SLANGI=OFF \
+		-DCMAKE_MACOSX_BUNDLE=NO && \
 	$(NINJA) libslang-compiler.a libcompiler-core.a libcore.a && \
 	cd Release/lib && \
 	strip -S libslang-compiler.a && \
 	strip -S libcompiler-core.a && \
 	strip -S libcore.a && \
 	strip -S ../../external/miniz/libminiz.a && \
-	strip -S ../../external/lz4/build/cmake/liblz4.a
+	strip -S ../../external/lz4/build/cmake/liblz4.a && \
+	strip -S ../../external/cmark/src/libcmark-gfm.a
 	@mkdir -p $(BUILD_DIR)/ios-device
 	@cp $(SLANG_DIR)/build-ios-device/Release/lib/*.a $(BUILD_DIR)/ios-device/
 	@cp $(SLANG_DIR)/build-ios-device/external/miniz/libminiz.a $(BUILD_DIR)/ios-device/
 	@cp $(SLANG_DIR)/build-ios-device/external/lz4/build/cmake/liblz4.a $(BUILD_DIR)/ios-device/
+	@cp $(SLANG_DIR)/build-ios-device/external/cmark/src/libcmark-gfm.a $(BUILD_DIR)/ios-device/
 	@echo "$(YELLOW)Merging libraries into single archive...$(NC)"
 	@cd $(BUILD_DIR)/ios-device && \
 	libtool -static -o libSlangCompiler.a \
@@ -103,7 +106,8 @@ device: generators
 		libcompiler-core.a \
 		libcore.a \
 		libminiz.a \
-		liblz4.a
+		liblz4.a \
+		libcmark-gfm.a
 	@echo "$(GREEN)✓ iOS Device build complete$(NC)"
 
 # Build for iOS Simulator (arm64)
@@ -125,18 +129,21 @@ simulator-arm64: generators
 		-DSLANG_ENABLE_SLANGD=OFF \
 		-DSLANG_ENABLE_SLANGC=OFF \
 		-DSLANG_ENABLE_SLANGRT=OFF \
-		-DSLANG_ENABLE_SLANGI=OFF && \
+		-DSLANG_ENABLE_SLANGI=OFF \
+		-DCMAKE_MACOSX_BUNDLE=NO && \
 	$(NINJA) libslang-compiler.a libcompiler-core.a libcore.a && \
 	cd Release/lib && \
 	strip -S libslang-compiler.a && \
 	strip -S libcompiler-core.a && \
 	strip -S libcore.a && \
 	strip -S ../../external/miniz/libminiz.a && \
-	strip -S ../../external/lz4/build/cmake/liblz4.a
+	strip -S ../../external/lz4/build/cmake/liblz4.a && \
+	strip -S ../../external/cmark/src/libcmark-gfm.a
 	@mkdir -p $(BUILD_DIR)/ios-simulator-arm64
 	@cp $(SLANG_DIR)/build-ios-simulator-arm64/Release/lib/*.a $(BUILD_DIR)/ios-simulator-arm64/
 	@cp $(SLANG_DIR)/build-ios-simulator-arm64/external/miniz/libminiz.a $(BUILD_DIR)/ios-simulator-arm64/
 	@cp $(SLANG_DIR)/build-ios-simulator-arm64/external/lz4/build/cmake/liblz4.a $(BUILD_DIR)/ios-simulator-arm64/
+	@cp $(SLANG_DIR)/build-ios-simulator-arm64/external/cmark/src/libcmark-gfm.a $(BUILD_DIR)/ios-simulator-arm64/
 	@echo "$(YELLOW)Merging libraries into single archive...$(NC)"
 	@cd $(BUILD_DIR)/ios-simulator-arm64 && \
 	libtool -static -o libSlangCompiler.a \
@@ -144,7 +151,8 @@ simulator-arm64: generators
 		libcompiler-core.a \
 		libcore.a \
 		libminiz.a \
-		liblz4.a
+		liblz4.a \
+		libcmark-gfm.a
 	@echo "$(GREEN)✓ iOS Simulator (arm64) build complete$(NC)"
 
 # Build for iOS Simulator (x86_64)
@@ -166,18 +174,21 @@ simulator-x86_64: generators
 		-DSLANG_ENABLE_SLANGD=OFF \
 		-DSLANG_ENABLE_SLANGC=OFF \
 		-DSLANG_ENABLE_SLANGRT=OFF \
-		-DSLANG_ENABLE_SLANGI=OFF && \
+		-DSLANG_ENABLE_SLANGI=OFF \
+		-DCMAKE_MACOSX_BUNDLE=NO && \
 	$(NINJA) libslang-compiler.a libcompiler-core.a libcore.a && \
 	cd Release/lib && \
 	strip -S libslang-compiler.a && \
 	strip -S libcompiler-core.a && \
 	strip -S libcore.a && \
 	strip -S ../../external/miniz/libminiz.a && \
-	strip -S ../../external/lz4/build/cmake/liblz4.a
+	strip -S ../../external/lz4/build/cmake/liblz4.a && \
+	strip -S ../../external/cmark/src/libcmark-gfm.a
 	@mkdir -p $(BUILD_DIR)/ios-simulator-x86_64
 	@cp $(SLANG_DIR)/build-ios-simulator-x86_64/Release/lib/*.a $(BUILD_DIR)/ios-simulator-x86_64/
 	@cp $(SLANG_DIR)/build-ios-simulator-x86_64/external/miniz/libminiz.a $(BUILD_DIR)/ios-simulator-x86_64/
 	@cp $(SLANG_DIR)/build-ios-simulator-x86_64/external/lz4/build/cmake/liblz4.a $(BUILD_DIR)/ios-simulator-x86_64/
+	@cp $(SLANG_DIR)/build-ios-simulator-x86_64/external/cmark/src/libcmark-gfm.a $(BUILD_DIR)/ios-simulator-x86_64/
 	@echo "$(YELLOW)Merging libraries into single archive...$(NC)"
 	@cd $(BUILD_DIR)/ios-simulator-x86_64 && \
 	libtool -static -o libSlangCompiler.a \
@@ -185,7 +196,8 @@ simulator-x86_64: generators
 		libcompiler-core.a \
 		libcore.a \
 		libminiz.a \
-		liblz4.a
+		liblz4.a \
+		libcmark-gfm.a
 	@echo "$(GREEN)✓ iOS Simulator (x86_64) build complete$(NC)"
 
 # Create universal Simulator library (arm64 + x86_64)

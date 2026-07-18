@@ -99,7 +99,7 @@ public:
     {
     }
 
-#ifdef SLANG_HAS_MOVE_SEMANTICS
+#if SLANG_HAS_MOVE_SEMANTICS
     /// Move Ctor
     SLANG_FORCE_INLINE ComPtr(ThisType&& rhs)
         : m_ptr(rhs.m_ptr)

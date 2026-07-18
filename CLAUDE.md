@@ -9,7 +9,7 @@ swift build
 # Test (iOS Simulator required)
 xcodebuild test \
   -scheme SwiftSlang-Package \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
   -skipPackagePluginValidation
 ```
 
