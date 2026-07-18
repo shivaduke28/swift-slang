@@ -71,6 +71,17 @@ make verify
 cat xcframework/SlangBinary.xcframework.zip.checksum
 ```
 
+**新しい依存ライブラリの確認**: Slang は更新で外部依存を増やすことがある（例: v2026.13.1 で cmark-gfm が追加された）。ビルドツリーに Makefile が知らない静的ライブラリがないか確認する:
+
+```bash
+find slang/build-ios-device -name "*.a" | grep -v "Release/lib"
+```
+
+既知の miniz / lz4 / cmark-gfm は必ず表示されるので無視してよい。それ以外の `.a` が出てきたら、Makefile の3プラットフォーム分の strip・cp・libtool マージ対象に追加してからビルドし直すこと。マージ漏れがあるとテストのリンク時に undefined symbols で失敗する。
+
+**ビルドのトラブルシューティング**:
+- iOS の configure が `install TARGETS given no BUNDLE DESTINATION` で失敗する場合: 新しい実行ファイルターゲットが原因。iOS では実行ファイルが自動でバンドル扱いになるため。Makefile の iOS 向け cmake 呼び出しには `-DCMAKE_MACOSX_BUNDLE=NO` を渡して回避している（v2026.13.1 の slang-dispatcher で発生）
+
 ### 4. バイナリリリース作成
 
 Slang バイナリ専用のリリースを作成する。タグ形式は `slang-binary/$ARGUMENTS`:
@@ -96,11 +107,26 @@ gh release create "slang-binary/$ARGUMENTS" \
 ),
 ```
 
-### 6. README.md 更新
+### 6. テスト実行
+
+Package.swift 更新後、必ずテストを実行してリンクエラーがないか確認する（binaryTarget はリモート URL 参照のため、リリース作成後でないとテストできない）:
+
+```bash
+xcodebuild test \
+  -scheme SwiftSlang-Package \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -skipPackagePluginValidation
+```
+
+- テスト結果は `Executed N tests, with 0 failures` と `** TEST SUCCEEDED **` まで確認すること。destination が存在しないと候補一覧を出して終了するだけで、パイプの仕方によっては exit code 0 に見えることがある
+- リンクエラーが出た場合はバイナリを修正して再ビルドし、`gh release upload "slang-binary/<version>" xcframework/SlangBinary.xcframework.zip --clobber` で差し替え、Package.swift の checksum も更新する
+- バイナリ差し替え後に checksum 不一致エラーが出たら、SwiftPM が古い zip をキャッシュしている。`rm -rf ~/Library/Caches/org.swift.swiftpm` と DerivedData の削除で解消する
+
+### 7. README.md 更新
 
 README.md の Slang バージョン表記を更新する。
 
-### 7. コミット
+### 8. コミット
 
 変更をコミットする（コミットメッセージにキャラ口調を使わないこと）:
 
