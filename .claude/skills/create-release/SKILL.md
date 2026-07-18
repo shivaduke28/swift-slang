@@ -14,7 +14,7 @@ argument-hint: [version]
 
 2. **最新リリースバージョンの確認**: リリースタグは GitHub Actions が作成し main には乗らないため、ローカルのタグは古いことがある。必ずリモートを確認する:
    - `git fetch --tags` でタグを同期する
-   - `gh release list --limit 5` で最新のパッケージリリース (vX.Y.Z) を確認する
+   - `gh release list --limit 10 | grep -v slang-binary` で最新のパッケージリリース (vX.Y.Z) を確認する（`slang-binary/*` はバイナリ専用リリースなので除外する）
    - ローカルの `git describe` だけで判断しないこと（古いバージョンを提案してタグ重複でワークフローが失敗する）
 
 3. **リリース内容の確認**: 前回リリースからの変更を確認する

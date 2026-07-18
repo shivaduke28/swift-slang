@@ -77,7 +77,7 @@ cat xcframework/SlangBinary.xcframework.zip.checksum
 find slang/build-ios-device -name "*.a" | grep -v "Release/lib"
 ```
 
-miniz / lz4 / cmark-gfm 以外の `.a` が出てきたら、Makefile の3プラットフォーム分の strip・cp・libtool マージ対象に追加してからビルドし直すこと。マージ漏れがあるとテストのリンク時に undefined symbols で失敗する。
+既知の miniz / lz4 / cmark-gfm は必ず表示されるので無視してよい。それ以外の `.a` が出てきたら、Makefile の3プラットフォーム分の strip・cp・libtool マージ対象に追加してからビルドし直すこと。マージ漏れがあるとテストのリンク時に undefined symbols で失敗する。
 
 **ビルドのトラブルシューティング**:
 - iOS の configure が `install TARGETS given no BUNDLE DESTINATION` で失敗する場合: 新しい実行ファイルターゲットが原因。iOS では実行ファイルが自動でバンドル扱いになるため。Makefile の iOS 向け cmake 呼び出しには `-DCMAKE_MACOSX_BUNDLE=NO` を渡して回避している（v2026.13.1 の slang-dispatcher で発生）
