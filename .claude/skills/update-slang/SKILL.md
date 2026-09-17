@@ -81,6 +81,7 @@ find slang/build-ios-device -name "*.a" | grep -v "Release/lib"
 
 **ビルドのトラブルシューティング**:
 - iOS の configure が `install TARGETS given no BUNDLE DESTINATION` で失敗する場合: 新しい実行ファイルターゲットが原因。iOS では実行ファイルが自動でバンドル扱いになるため。Makefile の iOS 向け cmake 呼び出しには `-DCMAKE_MACOSX_BUNDLE=NO` を渡して回避している（v2026.13.1 の slang-dispatcher で発生）
+- macOS ホストの generators configure が `building DXC from source` と出して DXC のクローン（約500MB）とビルド（10〜30分）を始める場合: v2026.18 から `SLANG_ENABLE_DXIL`（既定 ON）が macOS で DXC のソースビルドを要求するようになったため。iOS の Metal ターゲットには不要なので、Makefile の4つの cmake 呼び出し全部に `-DSLANG_ENABLE_DXIL=OFF` を渡している。途中で止めた場合は `slang/generators` を削除してからやり直すこと
 
 ### 4. バイナリリリース作成
 

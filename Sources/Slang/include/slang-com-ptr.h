@@ -7,13 +7,11 @@
  *
  * See LICENSE.txt in this directory for the full license text.
  */
-
 #ifndef SLANG_COM_PTR_H
 #define SLANG_COM_PTR_H
 
 #include "slang-com-helper.h"
 
-#include <assert.h>
 #include <cstddef>
 
 namespace Slang

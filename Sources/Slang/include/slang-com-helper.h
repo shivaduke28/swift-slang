@@ -7,7 +7,6 @@
  *
  * See LICENSE.txt in this directory for the full license text.
  */
-
 #ifndef SLANG_COM_HELPER_H
 #define SLANG_COM_HELPER_H
 
@@ -17,6 +16,7 @@
 #include "slang.h"
 
 #include <algorithm>
+#include <assert.h>
 #include <atomic>
 #include <iterator>
 

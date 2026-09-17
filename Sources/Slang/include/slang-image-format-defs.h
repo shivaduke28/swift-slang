@@ -7,7 +7,6 @@
  *
  * See LICENSE.txt in this directory for the full license text.
  */
-
 // slang-image-format-defs.h
 #ifndef SLANG_FORMAT
     #error Must define SLANG_FORMAT macro before including image-format-defs.h
