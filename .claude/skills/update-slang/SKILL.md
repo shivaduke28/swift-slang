@@ -33,12 +33,10 @@ cd ..
 
 ### 2. ヘッダーファイルの更新
 
-slang サブモジュールから最新ヘッダーを `Sources/Slang/include/` にコピーする:
+slang サブモジュールから最新ヘッダーを `Sources/Slang/include/` にコピーする。`slang.h` は `slang-deprecated.h` などを include しており、新しい C API の宣言がそちらに追加されることがある（v2026.19 の `spReflectionTypeLayout_GetContentVarLayout`）。一部だけコピーすると未宣言エラーになるので、`slang/include/` の全ヘッダーをコピーする:
 
 ```bash
-cp slang/include/slang.h Sources/Slang/include/
-cp slang/include/slang-com-ptr.h Sources/Slang/include/
-cp slang/include/slang-com-helper.h Sources/Slang/include/
+cp slang/include/*.h Sources/Slang/include/
 ```
 
 **重要**: コピー後、各ヘッダーファイルの先頭にライセンスヘッダーが残っているか確認する。元のファイルにある以下のブロックが消えていたら復元すること:
