@@ -19,8 +19,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "SlangBinary",
-            url: "https://github.com/shivaduke28/swift-slang/releases/download/slang-binary/v2026.19/SlangBinary.xcframework.zip",
-            checksum: "73d28a7bcc1aba0858fd9b3a301bce6f0e2d478def63b371313070f9fb302e9d"
+            url: "https://github.com/shivaduke28/swift-slang/releases/download/slang-binary/v2026.22/SlangBinary.xcframework.zip",
+            checksum: "1ac1f4482bc2a29837045695c584f24ed82d5a9ae15b3c36711220426dc8fa89"
         ),
 
         .target(
