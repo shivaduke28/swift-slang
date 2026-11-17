@@ -3,6 +3,15 @@ import SwiftSlang
 
 final class SwiftSlangTests: XCTestCase {
 
+    /// Finds a global shader parameter by name.
+    private func findParameter(in layout: SLProgramLayout, named names: String...) -> SLVariableLayoutReflection? {
+        for index in 0..<layout.getParameterCount() {
+            guard let param = layout.getParameterBy(index), let name = param.getName() else { continue }
+            if names.contains(name) { return param }
+        }
+        return nil
+    }
+
     // MARK: - Basic
 
     func testGlobalSessionCreation() throws {
@@ -53,11 +62,11 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let params = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let uniformParam = params.first { $0.name == "scalarParam" }
+        let uniformParam = findParameter(in: layout, named: "scalarParam")
         XCTAssertNotNil(uniformParam)
-        let typeLayout = try XCTUnwrap(uniformParam?.typeLayout)
+        let typeLayout = try XCTUnwrap(uniformParam?.getTypeLayout())
         let type = try XCTUnwrap(typeLayout.getType())
         XCTAssertEqual(type.getKind(), .scalar)
         XCTAssertEqual(type.getScalarType(), .float32)
@@ -80,10 +89,10 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let params = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let uniformParam = params.first { $0.name == "colorParam" }
-        let typeLayout = try XCTUnwrap(uniformParam?.typeLayout)
+        let uniformParam = findParameter(in: layout, named: "colorParam")
+        let typeLayout = try XCTUnwrap(uniformParam?.getTypeLayout())
         let type = try XCTUnwrap(typeLayout.getType())
         XCTAssertEqual(type.getKind(), .vector)
         XCTAssertEqual(type.getScalarType(), .float32)
@@ -107,10 +116,10 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let params = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let uniformParam = params.first { $0.name == "matParam" }
-        let typeLayout = try XCTUnwrap(uniformParam?.typeLayout)
+        let uniformParam = findParameter(in: layout, named: "matParam")
+        let typeLayout = try XCTUnwrap(uniformParam?.getTypeLayout())
         let type = try XCTUnwrap(typeLayout.getType())
         XCTAssertEqual(type.getKind(), .matrix)
         XCTAssertEqual(type.getRowCount(), 4)
@@ -138,12 +147,12 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let shaderParams = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let param = shaderParams.first { $0.name == "params" || $0.name == "data" }
+        let param = findParameter(in: layout, named: "params", "data")
         XCTAssertNotNil(param)
 
-        let typeLayout = try XCTUnwrap(param?.typeLayout)
+        let typeLayout = try XCTUnwrap(param?.getTypeLayout())
         let structType = try XCTUnwrap(typeLayout.getType())
         XCTAssertEqual(structType.getKind(), .struct)
         XCTAssertEqual(structType.getName(), "MyParams")
@@ -185,10 +194,10 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let shaderParams = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let param = shaderParams.first { $0.name == "params" || $0.name == "data" }
-        let typeLayout = try XCTUnwrap(param?.typeLayout)
+        let param = findParameter(in: layout, named: "params", "data")
+        let typeLayout = try XCTUnwrap(param?.getTypeLayout())
 
         XCTAssertEqual(typeLayout.getFieldCount(), 2)
         XCTAssertEqual(typeLayout.size, 8)
@@ -227,18 +236,19 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let params = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let uniformParam = params.first { $0.name == "intensity" }
+        let uniformParam = findParameter(in: layout, named: "intensity")
         XCTAssertNotNil(uniformParam)
-        XCTAssertGreaterThan(uniformParam!.userAttributes.count, 0)
+        let variable = try XCTUnwrap(uniformParam?.getVariable())
+        XCTAssertEqual(variable.getUserAttributeCount(), 1)
 
-        let rangeAttr = uniformParam!.userAttributes.first { $0.name == "range" }
-        XCTAssertNotNil(rangeAttr)
-        XCTAssertEqual(rangeAttr!.argumentCount, 3)
-        XCTAssertEqual(rangeAttr!.floatArguments[0].floatValue, 0.0, accuracy: 0.001)
-        XCTAssertEqual(rangeAttr!.floatArguments[1].floatValue, 0.5, accuracy: 0.001)
-        XCTAssertEqual(rangeAttr!.floatArguments[2].floatValue, 1.0, accuracy: 0.001)
+        let rangeAttr = try XCTUnwrap(variable.getUserAttribute(by: 0))
+        XCTAssertEqual(rangeAttr.name, "range")
+        XCTAssertEqual(rangeAttr.argumentCount, 3)
+        XCTAssertEqual(rangeAttr.floatArguments[0].floatValue, 0.0, accuracy: 0.001)
+        XCTAssertEqual(rangeAttr.floatArguments[1].floatValue, 0.5, accuracy: 0.001)
+        XCTAssertEqual(rangeAttr.floatArguments[2].floatValue, 1.0, accuracy: 0.001)
     }
 
     func testUserAttributeViaVariableReflection() throws {
@@ -262,10 +272,10 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let shaderParams = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let param = shaderParams.first { $0.name == "params" || $0.name == "data" }
-        let typeLayout = try XCTUnwrap(param?.typeLayout)
+        let param = findParameter(in: layout, named: "params", "data")
+        let typeLayout = try XCTUnwrap(param?.getTypeLayout())
 
         // Access field via TypeLayout → VariableLayoutReflection → VariableReflection
         XCTAssertEqual(typeLayout.getFieldCount(), 1)
@@ -300,10 +310,10 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let shaderParams = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let param = shaderParams.first { $0.name == "params" || $0.name == "data" }
-        let typeLayout = try XCTUnwrap(param?.typeLayout)
+        let param = findParameter(in: layout, named: "params", "data")
+        let typeLayout = try XCTUnwrap(param?.getTypeLayout())
         let structType = try XCTUnwrap(typeLayout.getType())
 
         let brightnessField = try XCTUnwrap(structType.getFieldBy(0))
@@ -345,26 +355,26 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let params = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
         // RWTexture2D<float4>
-        let tex4Param = try XCTUnwrap(params.first { $0.name == "rwTex4" })
-        let tex4TypeLayout = try XCTUnwrap(tex4Param.typeLayout)
+        let tex4Param = try XCTUnwrap(findParameter(in: layout, named: "rwTex4"))
+        let tex4TypeLayout = try XCTUnwrap(tex4Param.getTypeLayout())
         let tex4ResultType = try XCTUnwrap(tex4TypeLayout.getResourceResultType())
         XCTAssertEqual(tex4ResultType.getKind(), .vector)
         XCTAssertEqual(tex4ResultType.getScalarType(), .float32)
         XCTAssertEqual(tex4ResultType.getElementCount(), 4)
 
         // RWTexture2D<float>
-        let tex1Param = try XCTUnwrap(params.first { $0.name == "rwTex1" })
-        let tex1TypeLayout = try XCTUnwrap(tex1Param.typeLayout)
+        let tex1Param = try XCTUnwrap(findParameter(in: layout, named: "rwTex1"))
+        let tex1TypeLayout = try XCTUnwrap(tex1Param.getTypeLayout())
         let tex1ResultType = try XCTUnwrap(tex1TypeLayout.getResourceResultType())
         XCTAssertEqual(tex1ResultType.getKind(), .scalar)
         XCTAssertEqual(tex1ResultType.getScalarType(), .float32)
 
         // RWTexture2D<half4>
-        let texH4Param = try XCTUnwrap(params.first { $0.name == "rwTexH4" })
-        let texH4TypeLayout = try XCTUnwrap(texH4Param.typeLayout)
+        let texH4Param = try XCTUnwrap(findParameter(in: layout, named: "rwTexH4"))
+        let texH4TypeLayout = try XCTUnwrap(texH4Param.getTypeLayout())
         let texH4ResultType = try XCTUnwrap(texH4TypeLayout.getResourceResultType())
         XCTAssertEqual(texH4ResultType.getKind(), .vector)
         XCTAssertEqual(texH4ResultType.getScalarType(), .float16)
@@ -389,21 +399,115 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let params = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let texParam = params.first { $0.name == "myTexture" }
+        let texParam = findParameter(in: layout, named: "myTexture")
         XCTAssertNotNil(texParam)
-        XCTAssertEqual(texParam!.category, .shaderResource)
+        XCTAssertEqual(texParam!.getCategory(), .shaderResource)
 
-        let samplerParam = params.first { $0.name == "mySampler" }
+        let samplerParam = findParameter(in: layout, named: "mySampler")
         XCTAssertNotNil(samplerParam)
-        XCTAssertEqual(samplerParam!.category, .samplerState)
+        XCTAssertEqual(samplerParam!.getCategory(), .samplerState)
 
-        let texTypeLayout = try XCTUnwrap(texParam?.typeLayout)
+        let texTypeLayout = try XCTUnwrap(texParam?.getTypeLayout())
         let texType = try XCTUnwrap(texTypeLayout.getType())
         XCTAssertEqual(texType.getKind(), .resource)
         XCTAssertEqual(texType.getResourceShape(), .texture2D)
         XCTAssertEqual(texType.getResourceAccess(), .read)
+    }
+
+    // MARK: - Program Layout
+
+    func testParameterBindingOffsets() throws {
+        let globalSession = try SLGlobalSession.create()
+        let profile = globalSession.findProfile("sm_5_0")
+        let targetDesc = SLTargetDesc(format: .metal, profile: profile)
+        let sessionDesc = SLSessionDesc()
+        sessionDesc.targets = [targetDesc]
+        let session = try globalSession.createSession(with: sessionDesc)
+
+        let source = """
+        Texture2D texA;
+        Texture2D texB;
+        SamplerState mySampler;
+        [shader("fragment")]
+        float4 fragMain(float2 uv : TEXCOORD) : SV_Target {
+            return texA.Sample(mySampler, uv) + texB.Sample(mySampler, uv);
+        }
+        """
+        let module = try session.loadModule(fromSourceString: "Test", path: "<inline>", source: source)
+        let entryPoint = try module.entryPoint(at: 0)
+        let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
+        let linked = try composite.link()
+        let layout = try linked.getLayout(0)
+
+        XCTAssertEqual(layout.getParameterCount(), 3)
+
+        let texA = try XCTUnwrap(findParameter(in: layout, named: "texA"))
+        let texB = try XCTUnwrap(findParameter(in: layout, named: "texB"))
+        let sampler = try XCTUnwrap(findParameter(in: layout, named: "mySampler"))
+        XCTAssertEqual(texA.getOffset(.shaderResource), 0)
+        XCTAssertEqual(texB.getOffset(.shaderResource), 1)
+        XCTAssertEqual(sampler.getOffset(.samplerState), 0)
+    }
+
+    func testMixedCategoryParameter() throws {
+        let globalSession = try SLGlobalSession.create()
+        let profile = globalSession.findProfile("sm_5_0")
+        let targetDesc = SLTargetDesc(format: .metal, profile: profile)
+        let sessionDesc = SLSessionDesc()
+        sessionDesc.targets = [targetDesc]
+        let session = try globalSession.createSession(with: sessionDesc)
+
+        let source = """
+        struct Material { float4 color; Texture2D tex; SamplerState samp; };
+        uniform Material material;
+        [shader("fragment")]
+        float4 fragMain(float2 uv : TEXCOORD) : SV_Target {
+            return material.color * material.tex.Sample(material.samp, uv);
+        }
+        """
+        let module = try session.loadModule(fromSourceString: "Test", path: "<inline>", source: source)
+        let entryPoint = try module.entryPoint(at: 0)
+        let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
+        let linked = try composite.link()
+        let layout = try linked.getLayout(0)
+
+        let material = try XCTUnwrap(findParameter(in: layout, named: "material"))
+        XCTAssertEqual(material.getCategory(), .mixed)
+
+        let categories = (0..<material.getCategoryCount()).map { material.getCategoryBy($0) }
+        XCTAssertEqual(Set(categories), [.uniform, .shaderResource, .samplerState])
+    }
+
+    func testGlobalParamsVarLayout() throws {
+        let globalSession = try SLGlobalSession.create()
+        let profile = globalSession.findProfile("sm_5_0")
+        let targetDesc = SLTargetDesc(format: .metal, profile: profile)
+        let sessionDesc = SLSessionDesc()
+        sessionDesc.targets = [targetDesc]
+        let session = try globalSession.createSession(with: sessionDesc)
+
+        let source = """
+        uniform float intensity;
+        [shader("fragment")]
+        float4 fragMain() : SV_Target { return float4(intensity, 0, 0, 1); }
+        """
+        let module = try session.loadModule(fromSourceString: "Test", path: "<inline>", source: source)
+        let entryPoint = try module.entryPoint(at: 0)
+        let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
+        let linked = try composite.link()
+        let layout = try linked.getLayout(0)
+
+        // Global uniforms are wrapped in an implicit constant buffer.
+        let globalVarLayout = try XCTUnwrap(layout.getGlobalParamsVarLayout())
+        let globalTypeLayout = try XCTUnwrap(layout.getGlobalParamsTypeLayout())
+        XCTAssertEqual(globalTypeLayout.getKind(), .constantBuffer)
+        XCTAssertEqual(globalVarLayout.getOffset(.constantBuffer), 0)
+
+        let elementTypeLayout = try XCTUnwrap(globalTypeLayout.element)
+        XCTAssertEqual(elementTypeLayout.getFieldCount(), 1)
+        XCTAssertEqual(elementTypeLayout.getFieldBy(0)?.getName(), "intensity")
     }
 
     // MARK: - Preprocessor Macros
@@ -500,11 +604,11 @@ final class SwiftSlangTests: XCTestCase {
         let entryPoint = try module.entryPoint(at: 0)
         let composite = try session.createCompositeComponentType(with: module, entryPoints: [entryPoint])
         let linked = try composite.link()
-        let params = try linked.getShaderParameters(0)
+        let layout = try linked.getLayout(0)
 
-        let valuesParam = params.first { $0.name == "values" }
+        let valuesParam = findParameter(in: layout, named: "values")
         XCTAssertNotNil(valuesParam)
-        let typeLayout = try XCTUnwrap(valuesParam?.typeLayout)
+        let typeLayout = try XCTUnwrap(valuesParam?.getTypeLayout())
         let type = try XCTUnwrap(typeLayout.getType())
         XCTAssertEqual(type.getKind(), .array)
         XCTAssertEqual(type.getElementCount(), 3)

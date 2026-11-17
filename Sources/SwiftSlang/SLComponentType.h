@@ -4,7 +4,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class SLSession;
 @class SLBlob;
-@class SLShaderParameter;
+@class SLProgramLayout;
 
 /// A wrapper for slang::IComponentType
 /// Represents a component that can be linked and compiled.
@@ -31,12 +31,13 @@ NS_ASSUME_NONNULL_BEGIN
                            targetIndex:(NSInteger)targetIndex
                                  error:(NSError *_Nullable *_Nullable)error;
 
-/// Get shader parameters from the linked program using reflection.
+/// Get the program layout (reflection data) for a specific target.
+/// Corresponds to IComponentType::getLayout()
 /// @param targetIndex The index of the target (usually 0).
 /// @param error If an error occurs, upon return contains an NSError object that describes the problem.
-/// @return An array of SLShaderParameter objects, or nil if an error occurred.
-- (nullable NSArray<SLShaderParameter *> *)getShaderParameters:(NSInteger)targetIndex
-                                                          error:(NSError *_Nullable *_Nullable)error;
+/// @return The program layout, or nil if an error occurred.
+- (nullable SLProgramLayout *)getLayout:(NSInteger)targetIndex
+                                  error:(NSError *_Nullable *_Nullable)error;
 
 @end
 

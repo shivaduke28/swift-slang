@@ -54,6 +54,16 @@
     return fromSlangParameterCategory(_variableLayout->getCategory());
 }
 
+- (unsigned int)getCategoryCount {
+    if (!_variableLayout) return 0;
+    return _variableLayout->getCategoryCount();
+}
+
+- (SLParameterCategory)getCategoryByIndex:(unsigned int)index {
+    if (!_variableLayout) return SLParameterCategoryNone;
+    return fromSlangParameterCategory(_variableLayout->getCategoryByIndex(index));
+}
+
 - (NSUInteger)getOffset:(SLParameterCategory)category {
     if (!_variableLayout) return 0;
     return (NSUInteger)_variableLayout->getOffset(toSlangParameterCategory(category));

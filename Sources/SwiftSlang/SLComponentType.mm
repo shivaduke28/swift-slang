@@ -3,102 +3,12 @@
 #include "../Slang/include/slang-com-ptr.h"
 
 #import "SLComponentType.h"
-#import "SLShaderParameter.h"
-#import "SLTypeLayout.h"
-#import "SLUserAttributeInternal.h"
+#import "SLProgramLayout.h"
 #import "SLError.h"
 
-@interface SLTypeLayout ()
-- (instancetype)initWithTypeLayoutPtr:(slang::TypeLayoutReflection*)typeLayoutPtr;
+@interface SLProgramLayout ()
+- (instancetype)initWithProgramLayoutPtr:(slang::ProgramLayout*)ptr owner:(id)owner;
 @end
-
-static void collectParameterForCategory(
-    slang::VariableLayoutReflection* varLayout,
-    slang::ParameterCategory category,
-    NSString* name,
-    NSArray<SLUserAttribute*>* userAttributes,
-    NSMutableArray<SLShaderParameter*>* outParameters
-) {
-    slang::TypeLayoutReflection* rawTypeLayout = varLayout->getTypeLayout();
-    SLTypeLayout* typeLayout = rawTypeLayout
-        ? [[SLTypeLayout alloc] initWithTypeLayoutPtr:rawTypeLayout]
-        : nil;
-    switch (category) {
-        case slang::ParameterCategory::ShaderResource: {
-            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_SHADER_RESOURCE);
-            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
-                                                                      category:SLParameterCategoryShaderResource
-                                                                  bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes
-                                                                    typeLayout:typeLayout];
-            [outParameters addObject:param];
-            break;
-        }
-        case slang::ParameterCategory::SamplerState: {
-            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_SAMPLER_STATE);
-            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
-                                                                      category:SLParameterCategorySamplerState
-                                                                  bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes
-                                                                    typeLayout:typeLayout];
-            [outParameters addObject:param];
-            break;
-        }
-        case slang::ParameterCategory::ConstantBuffer: {
-            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_CONSTANT_BUFFER);
-            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
-                                                                      category:SLParameterCategoryConstantBuffer
-                                                                  bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes
-                                                                    typeLayout:typeLayout];
-            [outParameters addObject:param];
-            break;
-        }
-        case slang::ParameterCategory::Uniform: {
-            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_UNIFORM);
-            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
-                                                                      category:SLParameterCategoryUniform
-                                                                  bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes
-                                                                    typeLayout:typeLayout];
-            [outParameters addObject:param];
-            break;
-        }
-        case slang::ParameterCategory::UnorderedAccess: {
-            size_t offset = varLayout->getOffset(SLANG_PARAMETER_CATEGORY_UNORDERED_ACCESS);
-            SLShaderParameter* param = [[SLShaderParameter alloc] initWithName:name
-                                                                      category:SLParameterCategoryUnorderedAccess
-                                                                  bindingIndex:(NSUInteger)offset
-                                                                userAttributes:userAttributes
-                                                                    typeLayout:typeLayout];
-            [outParameters addObject:param];
-            break;
-        }
-        case slang::ParameterCategory::Mixed: {
-            unsigned int catCount = varLayout->getCategoryCount();
-            for (unsigned int i = 0; i < catCount; i++) {
-                slang::ParameterCategory subCat = varLayout->getCategoryByIndex(i);
-                collectParameterForCategory(varLayout, subCat, name, userAttributes, outParameters);
-            }
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-static void collectParametersFromVariableLayout(
-    slang::VariableLayoutReflection* varLayout,
-    NSString* name,
-    NSMutableArray<SLShaderParameter*>* outParameters
-) {
-    if (!varLayout) return;
-
-    // Collect user attributes from the variable
-    NSArray<SLUserAttribute*>* userAttributes = collectUserAttributes(varLayout->getVariable());
-
-    collectParameterForCategory(varLayout, varLayout->getCategory(), name, userAttributes, outParameters);
-}
 
 @interface SLComponentType () {
     Slang::ComPtr<slang::IComponentType> _componentType;
@@ -224,8 +134,8 @@ static void collectParametersFromVariableLayout(
                           length:codeBlob->getBufferSize()];
 }
 
-- (nullable NSArray<SLShaderParameter *> *)getShaderParameters:(NSInteger)targetIndex
-                                                          error:(NSError *_Nullable *_Nullable)error {
+- (nullable SLProgramLayout *)getLayout:(NSInteger)targetIndex
+                                  error:(NSError *_Nullable *_Nullable)error {
     if (!_componentType) {
         if (error) {
             *error = [NSError errorWithDomain:SlangErrorDomain
@@ -235,32 +145,25 @@ static void collectParametersFromVariableLayout(
         return nil;
     }
 
-    // Get program layout (reflection data)
-    slang::ProgramLayout* layout = _componentType->getLayout(static_cast<SlangInt>(targetIndex), nullptr);
+    Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+    slang::ProgramLayout* layout = _componentType->getLayout(static_cast<SlangInt>(targetIndex), diagnosticsBlob.writeRef());
     if (!layout) {
+        NSString *diagnostics = @"Failed to get program layout";
+        if (diagnosticsBlob) {
+            const char *diagStr = (const char *)diagnosticsBlob->getBufferPointer();
+            if (diagStr) {
+                diagnostics = [NSString stringWithUTF8String:diagStr];
+            }
+        }
         if (error) {
             *error = [NSError errorWithDomain:SlangErrorDomain
                                          code:-1
-                                     userInfo:@{NSLocalizedDescriptionKey: @"Failed to get program layout"}];
+                                     userInfo:@{NSLocalizedDescriptionKey: diagnostics}];
         }
         return nil;
     }
 
-    NSMutableArray<SLShaderParameter *> *parameters = [NSMutableArray array];
-    unsigned paramCount = layout->getParameterCount();
-
-    for (unsigned i = 0; i < paramCount; i++) {
-        slang::VariableLayoutReflection* param = layout->getParameterByIndex(i);
-        if (!param) continue;
-
-        const char* nameStr = param->getVariable()->getName();
-        if (!nameStr) continue;
-        NSString* name = [NSString stringWithUTF8String:nameStr];
-
-        collectParametersFromVariableLayout(param, name, parameters);
-    }
-
-    return [parameters copy];
+    return [[SLProgramLayout alloc] initWithProgramLayoutPtr:layout owner:self];
 }
 
 @end

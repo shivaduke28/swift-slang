@@ -47,22 +47,3 @@ static inline SLUserAttribute* _Nullable createUserAttribute(slang::UserAttribut
                                     intArguments:intArgs
                                  stringArguments:stringArgs];
 }
-
-/// Collect user-defined attributes from a slang::VariableReflection.
-static inline NSArray<SLUserAttribute*>* _Nonnull collectUserAttributes(slang::VariableReflection* _Nullable variable) {
-    if (!variable) return @[];
-
-    unsigned int attrCount = variable->getUserAttributeCount();
-    if (attrCount == 0) return @[];
-
-    NSMutableArray<SLUserAttribute*>* attributes = [NSMutableArray arrayWithCapacity:attrCount];
-
-    for (unsigned int i = 0; i < attrCount; i++) {
-        SLUserAttribute* userAttr = createUserAttribute(variable->getUserAttributeByIndex(i));
-        if (userAttr) {
-            [attributes addObject:userAttr];
-        }
-    }
-
-    return [attributes copy];
-}
