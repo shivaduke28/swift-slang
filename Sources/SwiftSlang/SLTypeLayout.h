@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-#import "SLShaderParameter.h"
+#import "SLParameterCategory.h"
 #import "SLTypeReflection.h"
 
 NS_ASSUME_NONNULL_BEGIN

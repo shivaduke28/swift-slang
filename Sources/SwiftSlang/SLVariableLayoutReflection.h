@@ -1,5 +1,5 @@
 #import <Foundation/Foundation.h>
-#import "SLShaderParameter.h"
+#import "SLParameterCategory.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,6 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// Corresponds to VariableLayoutReflection::getCategory()
 - (SLParameterCategory)getCategory;
+
+/// Corresponds to VariableLayoutReflection::getCategoryCount()
+- (unsigned int)getCategoryCount;
+
+/// Corresponds to VariableLayoutReflection::getCategoryByIndex()
+- (SLParameterCategory)getCategoryByIndex:(unsigned int)index;
 
 /// Corresponds to VariableLayoutReflection::getOffset(SlangParameterCategory)
 - (NSUInteger)getOffset:(SLParameterCategory)category;
